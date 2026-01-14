@@ -1,0 +1,6 @@
+ali:
+  apikey: sk-a54bad30c694458bb76c306b9f26c389
+spring:
+  jackson:
+    serialization:
+      fail-on-empty-beans: false
