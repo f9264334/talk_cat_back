@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.wangcl.dao.mapper.UserMapper">
+    <resultMap id="BaseResultMap" type="com.wangcl.dao.entity.User">
+        <id column="id" jdbcType="INTEGER" property="id"/>
+        <result column="username" jdbcType="VARCHAR" property="username"/>
+        <result column="password_hash" jdbcType="VARCHAR" property="passwordHash"/>
+        <result column="created_at" jdbcType="TIMESTAMP" property="createdAt"/>
+        <result column="updated_at" jdbcType="TIMESTAMP" property="updatedAt"/>
+    </resultMap>
+    <sql id="table_name">
+       wangcl_talk_agent.user
+    </sql>
+
+    <sql id="Base_Column_List">
+        id, username, password_hash, created_at, updated_at
+    </sql>
+
+    <select id="selectByPrimaryKey" parameterType="java.lang.Integer" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from
+        <include refid="table_name"/>
+        where id = #{id,jdbcType=INTEGER}
+    </select>
+    <select id="findByUsername" resultType="com.wangcl.dao.entity.User">
+        select * from
+        <include refid="table_name"/>
+        where
+         username = #{username}
+    </select>
+    <select id="existsByUsername" resultType="java.lang.Boolean">
+        select exists(select 1 from
+        <include refid="table_name"/>
+        where
+        username = #{username})
+    </select>
+    <delete id="deleteByPrimaryKey" parameterType="java.lang.Integer">
+        delete from
+        <include refid="table_name"/>
+        where id = #{id,jdbcType=INTEGER}
+    </delete>
+    <insert id="insert" parameterType="com.wangcl.dao.entity.User">
+        insert into
+        <include refid="table_name"/>
+        (username, password_hash, created_at,
+        updated_at)
+        values (#{username,jdbcType=VARCHAR}, #{passwordHash,jdbcType=VARCHAR}, #{createdAt,jdbcType=TIMESTAMP},
+        #{updatedAt,jdbcType=TIMESTAMP})
+        RETURNING id  <!-- 插入成功后自动返回 id（触发序列 nextval() 并返回） -->
+        <!-- 保留 selectKey 是为了 MyBatis 赋值到实体类 id 属性，内容为占位符即可 -->
+        <selectKey keyProperty="id" order="AFTER" resultType="java.lang.Integer">
+            SELECT 1
+        </selectKey>
+    </insert>
+    <insert id="insertSelective" parameterType="com.wangcl.dao.entity.User">
+        <selectKey keyProperty="id" order="AFTER" resultType="java.lang.Integer">
+            postgresql
+        </selectKey>
+        insert into
+        <include refid="table_name"/>
+        <trim prefix="(" suffix=")" suffixOverrides=",">
+            <if test="username != null">
+                username,
+            </if>
+            <if test="passwordHash != null">
+                password_hash,
+            </if>
+            <if test="createdAt != null">
+                created_at,
+            </if>
+            <if test="updatedAt != null">
+                updated_at,
+            </if>
+        </trim>
+        <trim prefix="values (" suffix=")" suffixOverrides=",">
+            <if test="username != null">
+                #{username,jdbcType=VARCHAR},
+            </if>
+            <if test="passwordHash != null">
+                #{passwordHash,jdbcType=VARCHAR},
+            </if>
+            <if test="createdAt != null">
+                #{createdAt,jdbcType=TIMESTAMP},
+            </if>
+            <if test="updatedAt != null">
+                #{updatedAt,jdbcType=TIMESTAMP},
+            </if>
+        </trim>
+    </insert>
+    <update id="updateByPrimaryKeySelective" parameterType="com.wangcl.dao.entity.User">
+        update
+        <include refid="table_name"/>
+        <set>
+            <if test="username != null">
+                username = #{username,jdbcType=VARCHAR},
+            </if>
+            <if test="passwordHash != null">
+                password_hash = #{passwordHash,jdbcType=VARCHAR},
+            </if>
+            <if test="createdAt != null">
+                created_at = #{createdAt,jdbcType=TIMESTAMP},
+            </if>
+            <if test="updatedAt != null">
+                updated_at = #{updatedAt,jdbcType=TIMESTAMP},
+            </if>
+        </set>
+        where id = #{id,jdbcType=INTEGER}
+    </update>
+    <update id="updateByPrimaryKey" parameterType="com.wangcl.dao.entity.User">
+        update
+        <include refid="table_name"/>
+        set
+        username = #{username,jdbcType=VARCHAR},
+        password_hash = #{passwordHash,jdbcType=VARCHAR},
+        created_at = #{createdAt,jdbcType=TIMESTAMP},
+        updated_at = #{updatedAt,jdbcType=TIMESTAMP}
+        where id = #{id,jdbcType=INTEGER}
+    </update>
+</mapper>
