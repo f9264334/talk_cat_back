@@ -15,9 +15,11 @@ import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 public class CrosConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
-        registry.addMapping("/api/**")
+        registry.addMapping("/**")
                 .allowedOriginPatterns("https://*.talk-cat.pages.dev") // 允许前端域名
-                .allowedMethods("GET", "POST")
-                .allowedHeaders("*");
+                .allowedMethods("GET", "POST", "OPTIONS")
+                .allowCredentials(true)
+                .allowedHeaders("*")
+                .maxAge(3600);
     }
 }
