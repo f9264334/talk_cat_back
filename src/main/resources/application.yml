@@ -6,8 +6,8 @@ spring:
       fail-on-empty-beans: false
   # 数据库连接配置（适配 Supabase）
   datasource:
-    url: jdbc:postgresql://db.jczzjsprdxjrmwwwermn.supabase.co:5432/postgres?sslmode=require&currentSchema=wangcl_talk_agent
-    username: postgres
+    url: jdbc:postgresql://aws-1-ap-south-1.pooler.supabase.com:5432/postgres?sslmode=require&currentSchema=wangcl_talk_agent
+    username: postgres.jczzjsprdxjrmwwwermn
     password: wangcl9264?
     driver-class-name: org.postgresql.Driver
     hikari:
