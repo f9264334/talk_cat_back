@@ -18,4 +18,3 @@ COPY --from=builder /app/target/*.jar app.jar
 # 暴露端口（和你Spring Boot配置的PORT一致，默认8080）
 EXPOSE 8080
 # 启动命令（读取环境变量PORT，适配Render的端口映射）
-ENTRYPOINT ["sh", "-c", "java -jar app.jar --server.port=${PORT:-8080}"]
