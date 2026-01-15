@@ -4,3 +4,35 @@ spring:
   jackson:
     serialization:
       fail-on-empty-beans: false
+  # 数据库连接配置（适配 Supabase）
+  datasource:
+    url: jdbc:postgresql://db.jczzjsprdxjrmwwwermn.supabase.co:5432/postgres?sslmode=require&currentSchema=wangcl_talk_agent
+    username: postgres
+    password: wangcl9264?
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      # 显式指定默认 Schema
+      schema: wangcl_talk_agent
+      # 连接创建时立即执行 SQL，强制设置 Schema 搜索路径（Supabase 必加）
+      connection-init-sql: SET search_path TO public, "$user", pg_catalog
+      # 连接超时/空闲配置（可选，增强稳定性）
+      connection-timeout: 30000
+      idle-timeout: 600000
+      max-lifetime: 1800000
+      maximum-pool-size: 10
+# MyBatis 配置
+mybatis:
+  # Mapper.xml 文件位置（推荐放在 resources/mapper 下）
+  mapper-locations: classpath:mapper/**/*.xml
+  # 开启驼峰命名自动转换（如数据库字段 user_name → 实体类 userName）
+  configuration:
+    map-underscore-to-camel-case: true
+    # 显示 SQL 日志（开发环境开启，生产关闭）
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+  app:
+    jwt:
+      secret: myVeryLongSecretKeyForHS512AlgorithmThatShouldBeAtLeast512BitsLongToMeetSecurityRequirements
+      expiration: 604800
+logging:
+  config: classpath:log4j2.xml
+  org.springframework.security: DEBUG

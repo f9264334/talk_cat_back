@@ -12,4 +12,5 @@ import lombok.Data;
 @Data
 public class BasicChatRequest {
     private String message;
+    private String agent;
 }

@@ -19,4 +19,7 @@ public class Result {
     public static Result success(Object data ){
         return  Result.builder().code(200).message("").data(data).build();
     }
+    public static Result error(Integer code, String message){
+        return  Result.builder().code(code).message(message).data(null).build();
+    }
 }

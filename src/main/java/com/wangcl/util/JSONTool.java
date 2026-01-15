@@ -1,100 +1,261 @@
+/*
+ * Copyright (c) 2020. Lorem ipsum dolor sit amet, consectetur adipiscing elit.
+ * Morbi non lorem porttitor neque feugiat blandit. Ut vitae ipsum eget quam lacinia accumsan.
+ * Etiam sed turpis ac ipsum condimentum fringilla. Maecenas magna.
+ * Proin dapibus sapien vel ante. Aliquam erat volutpat. Pellentesque sagittis ligula eget metus.
+ * Vestibulum commodo. Ut rhoncus gravida arcu.
+ */
+
 package com.wangcl.util;
 
+import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.MapperFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.util.StringUtils;
 
-import java.util.List;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.io.Writer;
+import java.security.MessageDigest;
+import java.util.Map;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
- * 功能描述：
- *
- * @author wangchenglong
- * @version 1.0
- * @date 2026/1/14 17:14
+ * Created by liuzeyu on 2017/6/19.
  */
 public class JSONTool {
-    // 全局共享 ObjectMapper（线程安全，无需频繁创建）
-    private static final ObjectMapper OBJECT_MAPPER;
+    private static final Logger logger = LoggerFactory.getLogger(JSONTool.class);
+    private static final ObjectMapper mapper = new ObjectMapper();
+    private static final ObjectMapper extendMapper = new ObjectMapper();
 
-    // 静态初始化：配置 ObjectMapper 全局参数
+
     static {
-        OBJECT_MAPPER = new ObjectMapper();
+        //序列化时，遇到空bean（无属性）时不会失败
+        extendMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+        //反序列化时，遇到未知属性（在bean上找不到对应属性）时不会失败
+        extendMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        //反序列化时，将空数组([])当做null来处理（以便把空数组反序列化到对象属性上——对php生成的json的map属性很有用）
+        extendMapper.configure(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT, true);
+        //不通过fields来探测（仅通过标准getter探测）
+        extendMapper.configure(MapperFeature.AUTO_DETECT_FIELDS, false);
 
-        // 1. 序列化配置：美化输出、支持 JDK8 时间类型（LocalDateTime/LocalDate 等）
-        OBJECT_MAPPER.enable(SerializationFeature.INDENT_OUTPUT) // 美化 JSON 格式（可选）
-                .registerModule(new JavaTimeModule()) // 支持 Java 8 时间API
-                .disable(SerializationFeature.FAIL_ON_EMPTY_BEANS) // 空对象不报错
-                .disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS); // 时间序列化为字符串（而非时间戳）
-
-        // 2. 反序列化配置：忽略未知字段、空字符串转 null 等
-        OBJECT_MAPPER.disable(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES) // 忽略 JSON 中不存在的类字段
-                .enable(DeserializationFeature.ACCEPT_EMPTY_STRING_AS_NULL_OBJECT) // 空字符串转 null
-                .disable(DeserializationFeature.FAIL_ON_NULL_FOR_PRIMITIVES); // 基本类型字段为 null 不报错
+        extendMapper.configure(SerializationFeature.WRITE_ENUMS_USING_TO_STRING, true);
+        extendMapper.configure(DeserializationFeature.READ_ENUMS_USING_TO_STRING, true);
     }
 
-    // 私有构造器：禁止实例化工具类
-    private JSONTool() {
-        throw new UnsupportedOperationException("JSONTool 是工具类，禁止实例化！");
+    static {
+        //序列化时，跳过null属性
+        mapper.setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        //序列化时，遇到空bean（无属性）时不会失败
+        mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+        //反序列化时，遇到未知属性（在bean上找不到对应属性）时不会失败
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        //反序列化时，将空数组([])当做null来处理（以便把空数组反序列化到对象属性上——对php生成的json的map属性很有用）
+        mapper.configure(DeserializationFeature.ACCEPT_EMPTY_ARRAY_AS_NULL_OBJECT, true);
+        //不通过fields来探测（仅通过标准getter探测）
+        mapper.configure(MapperFeature.AUTO_DETECT_FIELDS, false);
     }
 
-    // ====================== 核心方法1：对象 → JSON 字符串 ======================
+    /* ====================== 反序列化工具 ==================== */
 
     /**
-     * 将单个对象转为 JSON 字符串
-     * @param obj 待转换的对象（支持任意 POJO、集合、Map 等）
-     * @return JSON 字符串
-     * @throws RuntimeException 转换失败时抛出运行时异常（简化调用方处理）
+     * Json串转为对象
+     *
+     * @param json
+     * @param type
+     * @param <T>
+     * @return
      */
-    public static String toJson(Object obj) {
+    public static <T> T parse(String json, TypeReference<T> type) {
+        if (StringUtils.isEmpty(json)) {
+            return null;
+        }
         try {
-            return OBJECT_MAPPER.writeValueAsString(obj);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("对象转 JSON 字符串失败！目标对象：" + obj, e);
+            return mapper.readValue(json, type);
+        } catch (IOException e) {
+            logger.warn("parse failed. json={} type={} msg={}", json, type.getType(), e.getMessage());
+            return null;
         }
     }
 
-    // ====================== 核心方法2：JSON 字符串 → 指定类对象 ======================
+
+    public static String md5ToLong(String s) {
+
+        if (StringUtils.isEmpty(s)) {
+            return null;
+        }
+        // 这里根据MD5时间的值更换16进制abc的大小写
+        char hexDigits[] = {'0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'};
+        try {
+            byte[] btInput = s.getBytes();
+            //获得MD5摘要算法的 MessageDigest 对象
+            MessageDigest mdInst = MessageDigest.getInstance("MD5");
+            //使用指定的字节更新摘要
+            mdInst.update(btInput);
+            //获得密文
+            byte[] md = mdInst.digest();
+            char str[] = new char[md.length];
+            int k = 0;
+            for (int i = 0; i < md.length; i++) {
+                byte byte0 = md[i];
+                //只取高位
+                str[k++] = hexDigits[(byte0 >>> 4 & 0xf) % 10];
+            }
+            return new String(str);
+        } catch (Exception e) {
+            e.printStackTrace();
+            return null;
+        }
+    }
+
+    private static String estateNameRegex(String name) {
+        Pattern p = Pattern.compile("^(.*?)(\\d+号)*(\\d+期)*(\\(.*\\))*$");
+        Matcher matcher = p.matcher(name);
+        if (!matcher.matches()) {
+            System.out.println(matcher.matches());
+            return null;
+        }
+        return matcher.group(1);
+    }
+
+    public static void main(String[] args) {
+        System.out.println(estateNameRegex("发发地方12号"));
+        System.out.println(estateNameRegex("发发地方12期"));
+        System.out.println(estateNameRegex("发发地方12号(大声道)"));
+        System.out.println(estateNameRegex("发发地方(大声道)"));
+        System.out.println(estateNameRegex("发发地方"));
+
+        System.out.println(Long.valueOf(md5ToLong(("发发地方"))));
+        System.out.println(Long.valueOf(md5ToLong("206390230031_hx_http://hwxypic.5i5j.com/images/chengdudir/20230625/d909924aa7334579af307ab07fa884ab.jpg")));
+        System.out.println(Long.valueOf(md5ToLong("206390230031_ws_http://hwxypic.5i5j.com/images/chengdudir/20230625/d909924aa7334579af307ab07fa884ab.jpg")));
+        System.out.println(Long.valueOf(md5ToLong("206379565777_ws_http://hwxypic.5i5j.com/images/chengdudir/20230625/d909924aa73d579af307ab07fa884ab.jpg")));
+    }
+
+
+    public static <T> T parse2(String json, Class<T> type) throws IOException {
+        if (StringUtils.isEmpty(json)) {
+            return null;
+        }
+        return mapper.readValue(json, type);
+    }
 
     /**
-     * JSON 字符串转为单个指定类型的对象
-     * @param json JSON 字符串
-     * @param clazz 目标类的 Class 对象
-     * @param <T> 目标类型泛型
-     * @return 目标类对象
-     * @throws RuntimeException 转换失败时抛出运行时异常
+     * Json串转为对象
+     *
+     * @param json
+     * @param type
+     * @param <T>
+     * @return
      */
-    public static <T> T fromJson(String json, Class<T> clazz) {
-        if (json == null || json.trim().isEmpty()) {
-            throw new IllegalArgumentException("JSON 字符串不能为空！");
+    public static <T> T parse(String json, Class<T> type) {
+        if (StringUtils.isEmpty(json)) {
+            return null;
         }
         try {
-            return OBJECT_MAPPER.readValue(json, clazz);
-        } catch (JsonProcessingException e) {
-            throw new RuntimeException("JSON 字符串转对象失败！JSON：" + json + "，目标类：" + clazz.getName(), e);
+            return mapper.readValue(json, type);
+        } catch (IOException e) {
+            logger.warn("parse failed. json={} type={} msg={}", json, type, e.getMessage());
+            return null;
+        }
+    }
+
+
+    /**
+     * 输入流转为对象
+     *
+     * @param stream
+     * @param type
+     * @param <T>
+     * @return
+     */
+    public static <T> T parse(InputStream stream, TypeReference<T> type) {
+        try {
+            return mapper.readValue(stream, type);
+        } catch (IOException e) {
+            logger.warn("parse failed. type={} msg={}", type.getType(), e.getMessage());
+            return null;
         }
     }
 
     /**
-     * JSON 字符串转为 List 集合（泛型友好）
-     * @param json JSON 字符串
-     * @param elementClazz List 中元素的类对象
-     * @param <T> 元素类型泛型
-     * @return List<T> 集合
-     * @throws RuntimeException 转换失败时抛出运行时异常
+     * 输入流转为对象
+     *
+     * @param stream
+     * @param type
+     * @param <T>
+     * @return
      */
-    public static <T> List<T> fromJsonToList(String json, Class<T> elementClazz) {
-        if (json == null || json.trim().isEmpty()) {
-            throw new IllegalArgumentException("JSON 字符串不能为空！");
+    public static <T> T parse(InputStream stream, Class<T> type) {
+        try {
+            return mapper.readValue(stream, type);
+        } catch (IOException e) {
+            logger.warn("parse failed. type={} msg={}", type, e.getMessage());
+            return null;
+        }
+    }
+
+    /* ====================== 序列化工具 ==================== */
+
+    /**
+     * 序列化对象转为json-string
+     *
+     * @param target
+     * @return
+     */
+    public static String writeToString(Object target) {
+        if (target == null) {
+            return null;
         }
         try {
-            // 构建 List 类型的 TypeReference，解决泛型擦除问题
-            return OBJECT_MAPPER.readValue(json,
-                    OBJECT_MAPPER.getTypeFactory().constructCollectionType(List.class, elementClazz));
+            return mapper.writeValueAsString(target);
         } catch (JsonProcessingException e) {
-            throw new RuntimeException("JSON 字符串转 List 失败！JSON：" + json + "，元素类型：" + elementClazz.getName(), e);
+            logger.warn("writeToString failed. target={} msg={}", target.getClass(), e.getMessage());
+            return "";
         }
+    }
+
+    public static String writeToStringAll(Object target) {
+        try {
+            return extendMapper.writeValueAsString(target);
+        } catch (JsonProcessingException e) {
+            logger.warn("writeToStringAll failed. target={} msg={}", target.getClass(), e.getMessage());
+            return "";
+        }
+    }
+
+
+    /**
+     * 序列化对象并写入Writer
+     *
+     * @param writer
+     * @param target
+     * @throws IOException
+     */
+    public static void write(Writer writer, Object target) throws IOException {
+        mapper.writeValue(writer, target);
+    }
+
+    /**
+     * 序列化对象并写入Stream
+     *
+     * @param stream
+     * @param target
+     * @throws IOException
+     */
+    public static void write(OutputStream stream, Object target) throws IOException {
+        mapper.writeValue(stream, target);
+    }
+
+    public static Map<String, Object> objectToMap(Object object) {
+        return mapper.convertValue(object, new TypeReference<Map<String, Object>>() {
+        });
     }
 }

@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE generatorConfiguration
+        PUBLIC "-//mybatis.org//DTD MyBatis Generator Configuration 1.0//EN"
+        "http://mybatis.org/dtd/mybatis-generator-config_1_0.dtd">
+
+<generatorConfiguration>
+    <context id="PostgreSQL" targetRuntime="MyBatis3" defaultModelType="flat">
+
+        <!-- 关闭注释生成（可选，避免乱码） -->
+        <commentGenerator>
+            <property name="suppressAllComments" value="true"/>
+            <property name="suppressDate" value="true"/>
+        </commentGenerator>
+
+        <!-- 2. 配置 PostgreSQL/Supabase 数据库连接信息 -->
+        <jdbcConnection driverClass="org.postgresql.Driver"
+                        connectionURL="jdbc:postgresql://aws-1-ap-south-1.pooler.supabase.com:5432/postgres?sslmode=require"
+                        userId="postgres.jczzjsprdxjrmwwwermn"
+                        password="wangcl9264?">
+            <!-- PG 特殊配置：解决表名/字段名大小写问题 -->
+            <property name="nullCatalogMeansCurrent" value="true"/>
+        </jdbcConnection>
+
+        <!-- 3. 配置实体类生成规则 -->
+        <javaModelGenerator targetPackage="com.wangcl.dao.entity"
+                            targetProject="src/main/java">
+            <property name="enableSubPackages" value="true"/>
+            <property name="trimStrings" value="true"/> <!-- 去除字符串前后空格 -->
+        </javaModelGenerator>
+
+        <!-- 4. 配置 Mapper.xml 生成规则 -->
+        <sqlMapGenerator targetPackage="mapper"
+                         targetProject="src/main/resources">
+            <property name="enableSubPackages" value="true"/>
+        </sqlMapGenerator>
+
+        <!-- 5. 配置 Mapper 接口（DAO）生成规则 -->
+        <javaClientGenerator type="XMLMAPPER"
+                             targetPackage="com.wangcl.dao.mapper"
+                             targetProject="src/main/java">
+            <property name="enableSubPackages" value="true"/>
+        </javaClientGenerator>
+
+        <!-- 6. 指定要生成的表（核心！替换为你的表名） -->
+        <!-- tableName：数据库表名（PG 小写，若大写加双引号）；domainObjectName：生成的实体类名 -->
+        <table tableName="user"  domainObjectName="User"
+               enableCountByExample="false" enableUpdateByExample="false"
+               enableDeleteByExample="false" enableSelectByExample="false"
+               selectByExampleQueryId="false">
+            <!-- 可选：指定主键列（PG 自增主键需配置） -->
+            <generatedKey column="id" sqlStatement="postgresql" identity="true"/>
+        </table>
+
+        <!-- 可添加多个 table 标签生成多张表 -->
+        <!-- <table tableName="order_info" domainObjectName="Order">
+            <generatedKey column="id" sqlStatement="postgresql" identity="true"/>
+        </table> -->
+    </context>
+</generatorConfiguration>
