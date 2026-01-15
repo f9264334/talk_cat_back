@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: java-api
+    env: java
+    plan: free  # 免费计划
+    buildCommand: ./mvnw clean package -DskipTests  # 自动下载Maven依赖并打包
+    startCommand: java -jar target/*.jar  # 启动JAR包（匹配所有JAR文件）
+    envVars:
+      - key: PORT
+        value: 8080  # Render会自动映射到外部端口
