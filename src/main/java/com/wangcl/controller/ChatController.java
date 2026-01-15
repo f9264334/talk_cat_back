@@ -24,7 +24,7 @@ public class ChatController {
 
     @PostMapping("/startChat")
     public Result startChat(@RequestBody BasicChatRequest request) {
-        return Result.success(chatService.chatv2(request.getMessage()));
+        return Result.success(chatService.chatv2(request));
     }
 
     @PostMapping("/continueChat")

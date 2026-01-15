@@ -4,19 +4,17 @@ import com.wangcl.dao.entity.User;
 import com.wangcl.dao.store.InMemoryKVStore;
 import com.wangcl.util.JSONTool;
 import com.wangcl.util.JwtTokenProvider;
+import com.wangcl.config.UserContext;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.apache.el.parser.Token;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.web.authentication.WebAuthenticationDetailsSource;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
-
 
 import java.io.IOException;
 
@@ -59,10 +57,17 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 authenticationToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
                 // 存入SecurityContextHolder，后续authenticated()会读取这个对象
                 SecurityContextHolder.getContext().setAuthentication(authenticationToken);
+                
+                // 将用户信息存储到UserContext中
+                UserContext.setCurrentUser(userDetails);
             }
         }
-
-        // 4. 继续执行过滤器链
-        chain.doFilter(request, response);
+        try {
+            // 4. 继续执行过滤器链
+            chain.doFilter(request, response);
+        } finally {
+            // 清理UserContext，防止内存泄漏
+            UserContext.clearCurrentUser();
+        }
     }
 }

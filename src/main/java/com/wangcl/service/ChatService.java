@@ -1,21 +1,19 @@
 package com.wangcl.service;
 
+import com.wangcl.config.UserContext;
+import com.wangcl.dao.store.InMemoryKVStore;
+import com.wangcl.dto.BasicChatRequest;
 import com.wangcl.dto.BasicChatResponse;
-import com.wangcl.util.JSONTool;
-import dev.langchain4j.data.message.ChatMessage;
 import dev.langchain4j.data.message.SystemMessage;
-import dev.langchain4j.data.message.TextContent;
 import dev.langchain4j.data.message.UserMessage;
-import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.model.chat.ChatModel;
 import dev.langchain4j.model.chat.response.ChatResponse;
-import dev.langchain4j.service.AiServices;
 import dev.langchain4j.service.Result;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.BeanUtils;
 import org.springframework.stereotype.Service;
 
-import java.util.List;
+import static com.wangcl.common.AgentEnum.*;
 
 /**
  * 功能描述：
@@ -29,13 +27,17 @@ import java.util.List;
 public class ChatService {
 
     private final ChatModel chatModel;
-    private final ChatMemory chatMemory;
-    private final ChatAssistant assistant;
+    private final CatChatAssistant catChatAssistant;
+    private final DogChatAssistant dogChatAssistant;
+    private final FishChatAssistant fishChatAssistant;
+    private final InMemoryKVStore kvStore;
 
-    public ChatService(ChatModel chatModel, ChatMemory chatMemory, ChatAssistant assistant) {
+    public ChatService(ChatModel chatModel, CatChatAssistant catChatAssistant, DogChatAssistant dogChatAssistant, FishChatAssistant fishChatAssistant, InMemoryKVStore kvStore) {
         this.chatModel = chatModel;
-        this.chatMemory = chatMemory;
-        this.assistant = assistant;
+        this.catChatAssistant = catChatAssistant;
+        this.dogChatAssistant = dogChatAssistant;
+        this.fishChatAssistant = fishChatAssistant;
+        this.kvStore = kvStore;
     }
 
 
@@ -44,8 +46,22 @@ public class ChatService {
         UserMessage userMessage = UserMessage.from(message);
         return chatModel.chat(systemMessage, userMessage);
     }
-    public BasicChatResponse chatv2(String message) {
-        Result<String> result = assistant.chat(message);
+    public BasicChatResponse chatv2(BasicChatRequest request) {
+        int id = UserContext.getCurrentUser().getId();
+        Result<String> result;
+        switch (request.getAgent()) {
+            case CAT:
+                result= catChatAssistant.chat(String.valueOf(id),request.getMessage());
+                break;
+            case DOG:
+                result = dogChatAssistant.chat(String.valueOf(id),request.getMessage());
+                break;
+            case FISH:
+                result = fishChatAssistant.chat(String.valueOf(id),request.getMessage());
+                break;
+            default:
+                throw new IllegalArgumentException("Invalid pet type");
+        }
         BasicChatResponse<String> response = new BasicChatResponse<>();
         BeanUtils.copyProperties(result, response);
         return response;

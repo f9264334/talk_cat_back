@@ -1,6 +1,8 @@
 package com.wangcl.config;
 
-import com.wangcl.service.ChatAssistant;
+import com.wangcl.service.CatChatAssistant;
+import com.wangcl.service.DogChatAssistant;
+import com.wangcl.service.FishChatAssistant;
 import dev.langchain4j.community.model.dashscope.QwenChatModel;
 import dev.langchain4j.memory.ChatMemory;
 import dev.langchain4j.memory.chat.MessageWindowChatMemory;
@@ -22,6 +24,7 @@ public class ModelConfig{
 
     @Value("${ali.apikey}")
     private String AliApiKey;
+    
     @Bean
     public ChatModel chatModel() {
         QwenChatModel qwenChatModel = QwenChatModel
@@ -33,19 +36,45 @@ public class ModelConfig{
                 .build();
         return qwenChatModel;
     }
+    
+//    @Bean
+//    public ChatMemory chatMemory() {
+//        return MessageWindowChatMemory.builder()
+//                .maxMessages(10)
+//                .id("assistant-chat-memory-001")
+//                .build();
+//    }
+
     @Bean
-    public ChatMemory chatMemory() {
-        return MessageWindowChatMemory.builder()
-                .maxMessages(10)
-                .id("assistant-chat-memory-001")
+    public CatChatAssistant catChatAssistant( QwenChatModel qwenChatModel) {
+        return AiServices.builder(CatChatAssistant.class)
+                .chatModel(qwenChatModel)
+                .chatMemoryProvider(memoryId -> MessageWindowChatMemory.builder()
+                        .maxMessages(10)
+                        .id("cat-memory-" + memoryId)
+                        .build())
                 .build();
     }
-
-    @Bean(name = "assistant")
-    public ChatAssistant assistant(ChatMemory chatMemory, QwenChatModel qwenChatModel) {
-        return AiServices.builder(ChatAssistant.class)
+    
+    @Bean
+    public DogChatAssistant dogChatAssistant(QwenChatModel qwenChatModel) {
+        return AiServices.builder(DogChatAssistant.class)
                 .chatModel(qwenChatModel)
-                .chatMemory(chatMemory) // 绑定记忆组件
+                .chatMemoryProvider(memoryId -> MessageWindowChatMemory.builder()
+                        .maxMessages(10)
+                        .id("dog-memory-" + memoryId)
+                        .build())
+                .build();
+    }
+    
+    @Bean
+    public FishChatAssistant fishChatAssistant(QwenChatModel qwenChatModel) {
+        return AiServices.builder(FishChatAssistant.class)
+                .chatModel(qwenChatModel)
+                .chatMemoryProvider(memoryId -> MessageWindowChatMemory.builder()
+                        .maxMessages(10)
+                        .id("fish-memory-" + memoryId)
+                        .build())
                 .build();
     }
 }
