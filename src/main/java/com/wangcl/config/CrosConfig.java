@@ -16,7 +16,7 @@ public class CrosConfig implements WebMvcConfigurer {
     @Override
     public void addCorsMappings(CorsRegistry registry) {
         registry.addMapping("/api/**")
-                .allowedOriginPatterns("https://talk-cat.pages.dev") // 允许前端域名
+                .allowedOriginPatterns("https://*.talk-cat.pages.dev") // 允许前端域名
                 .allowedMethods("GET", "POST")
                 .allowedHeaders("*");
     }
