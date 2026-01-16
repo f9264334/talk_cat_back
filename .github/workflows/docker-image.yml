@@ -16,31 +16,14 @@ jobs:
       # 步骤1：拉取仓库代码到虚拟机
       - name: Checkout code from GitHub
         uses: actions/checkout@v4
-      - name: Configure Docker Hub Mirror
-        run: |
-          sudo mkdir -p /etc/docker
-          sudo tee /etc/docker/daemon.json <<-'EOF'
-          {
-            "registry-mirrors": [
-              "https://yxi6pug1.mirror.aliyuncs.com",
-              "https://docker.mirrors.ustc.edu.cn",
-              "https://hub-mirror.c.163.com"
-            ]
-          }
-          EOF
-          sudo systemctl daemon-reload
-          sudo systemctl restart docker
       # 步骤2：配置Docker Buildx（优化镜像构建）
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
       # 步骤3：登录到Docker Hub（使用Secrets中的账号密码）
       - name: Login to Docker Hub
-        uses: docker/login-action@v3
-        with:
-          registry: ccr.ccs.tencentyun.com/wangcl17/wangcl17
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
+        run:
+          docker login ccr.ccs.tencentyun.com --username=100034085191 -p ${{ secrets.TENCENT_CCR_PASSWORD }}
 
       # 步骤4：构建并推送Docker镜像到Docker Hub
       - name: Build and push Docker image
@@ -72,7 +55,7 @@ jobs:
           # 执行部署命令（容错：容器不存在时stop/rm不报错）
           script: |
             # 登录Docker Hub（服务器侧，避免拉取私有镜像失败）
-            echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+            echo "${{ secrets.TENCENT_CCR_PASSWORD }}" | docker login ccr.ccs.tencentyun.com --username=100034085191 --password-stdin
             # 拉取最新镜像
             docker pull ${{ secrets.DOCKER_USERNAME }}/my-app:latest
             # 停止并删除旧容器（若存在）
