@@ -30,6 +30,7 @@ jobs:
           EOF
           sudo systemctl daemon-reload
           sudo systemctl restart docker
+          echo "${{ secrets.DOCKER_USERNAME }}"
       # 步骤2：配置Docker Buildx（优化镜像构建）
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -53,10 +54,11 @@ jobs:
           tags: |
             ${{ secrets.DOCKER_USERNAME }}/my-app:latest
             ${{ secrets.DOCKER_USERNAME }}/my-app:${{ github.sha }}
+          
           # 开启镜像缓存（加速重复构建）
           cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/my-app:cache
           cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/my-app:cache,mode=max
-
+          
       # 步骤5：SSH连接云服务器，拉取镜像并重启容器
       - name: Deploy to cloud server via SSH
         uses: appleboy/ssh-action@master
