@@ -34,12 +34,12 @@ jobs:
           push: true
           # 镜像标签：latest（最新版）+ 提交ID（便于回滚）
           tags: |
-            ccr.ccs.tencentyun.com/wangcl17/wangcl17/talk-agent:latest
-            ccr.ccs.tencentyun.com/wangcl17/wangcl17/talk-agent:${{ github.sha }}
+            ccr.ccs.tencentyun.com/wangcl17/tallk-agent-back:latest
+            ccr.ccs.tencentyun.com/wangcl17/tallk-agent-back:${{ github.sha }}
           
           # 开启镜像缓存（加速重复构建）
-          cache-from: type=registry,ref=ccr.ccs.tencentyun.com/wangcl17/wangcl17/talk-agent:cache
-          cache-to: type=registry,ref=ccr.ccs.tencentyun.com/wangcl17/wangcl17/talk-agent:cache,mode=max
+          cache-from: type=registry,ref=ccr.ccs.tencentyun.com/wangcl17/tallk-agent-back:cache
+          cache-to: type=registry,ref=ccr.ccs.tencentyun.com/wangcl17/tallk-agent-back:cache,mode=max
           
       # 步骤5：SSH连接云服务器，拉取镜像并重启容器
       - name: Deploy to cloud server via SSH
@@ -56,11 +56,11 @@ jobs:
             # 登录Docker Hub（服务器侧，避免拉取私有镜像失败）
             echo "${{ secrets.TENCENT_CCR_PASSWORD }}" | docker login ccr.ccs.tencentyun.com --username=100034085191 --password-stdin
             # 拉取最新镜像
-            docker pull ccr.ccs.tencentyun.com/wangcl17/wangcl17/talk-agent:latest
+            docker pull ccr.ccs.tencentyun.com/wangcl17/tallk-agent-back:latest
             # 停止并删除旧容器（若存在）
-            docker stop talk-agent || true
-            docker rm talk-agent || true
+            docker stop tallk-agent-back || true
+            docker rm tallk-agent-back || true
             # 启动新容器（示例：映射80端口，可根据你的应用修改）
-            docker run -d --name talk-agent -p 8080:8080 --restart=always ccr.ccs.tencentyun.com/wangcl17/wangcl17/talk-agent:latest
+            docker run -d --name talk-agent -p 8080:8080 --restart=always ccr.ccs.tencentyun.com/wangcl17/tallk-agent-back:latest
             # 清理无用镜像（可选，节省服务器空间）
             docker system prune -f
