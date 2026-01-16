@@ -22,6 +22,7 @@ jobs:
           sudo tee /etc/docker/daemon.json <<-'EOF'
           {
             "registry-mirrors": [
+              "https://yxi6pug1.mirror.aliyuncs.com",
               "https://docker.mirrors.ustc.edu.cn",
               "https://hub-mirror.c.163.com"
             ]
