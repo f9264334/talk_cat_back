@@ -1,0 +1,69 @@
+# 工作流名称
+name: Docker Build, Push and Deploy to Server
+
+# 触发条件：推送到main分支时执行（可改为你的主分支，如master）
+on:
+  push:
+    branches: [ main ]
+
+# 定义作业
+jobs:
+  deploy:
+    # 使用GitHub托管的Ubuntu虚拟机运行
+    runs-on: ubuntu-latest
+    # 步骤列表
+    steps:
+      # 步骤1：拉取仓库代码到虚拟机
+      - name: Checkout code from GitHub
+        uses: actions/checkout@v4
+
+      # 步骤2：配置Docker Buildx（优化镜像构建）
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # 步骤3：登录到Docker Hub（使用Secrets中的账号密码）
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # 步骤4：构建并推送Docker镜像到Docker Hub
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          # 构建上下文：仓库根目录（Dockerfile需在根目录，否则指定路径）
+          context: .
+          # 开启推送（推送到Docker Hub）
+          push: true
+          # 镜像标签：latest（最新版）+ 提交ID（便于回滚）
+          tags: |
+            ${{ secrets.DOCKER_USERNAME }}/my-app:latest
+            ${{ secrets.DOCKER_USERNAME }}/my-app:${{ github.sha }}
+          # 开启镜像缓存（加速重复构建）
+          cache-from: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/my-app:cache
+          cache-to: type=registry,ref=${{ secrets.DOCKER_USERNAME }}/my-app:cache,mode=max
+
+      # 步骤5：SSH连接云服务器，拉取镜像并重启容器
+      - name: Deploy to cloud server via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          # 云服务器信息（从Secrets读取）
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          # 超时时间（避免部署卡住）
+          timeout: 60s
+          # 执行部署命令（容错：容器不存在时stop/rm不报错）
+          script: |
+            # 登录Docker Hub（服务器侧，避免拉取私有镜像失败）
+            echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+            # 拉取最新镜像
+            docker pull ${{ secrets.DOCKER_USERNAME }}/my-app:latest
+            # 停止并删除旧容器（若存在）
+            docker stop my-app || true
+            docker rm my-app || true
+            # 启动新容器（示例：映射80端口，可根据你的应用修改）
+            docker run -d --name my-app -p 8080:8080 --restart=always ${{ secrets.DOCKER_USERNAME }}/my-app:latest
+            # 清理无用镜像（可选，节省服务器空间）
+            docker system prune -f
