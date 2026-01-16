@@ -16,7 +16,10 @@ jobs:
       # 步骤1：拉取仓库代码到虚拟机
       - name: Checkout code from GitHub
         uses: actions/checkout@v4
-
+      - name: Test Secrets
+        run: |
+          echo "DOCKER_USERNAME exists: ${{ secrets.DOCKER_USERNAME != '' }}"
+          echo "DOCKER_PASSWORD exists: ${{ secrets.DOCKER_PASSWORD != '' }}"
       # 步骤2：配置Docker Buildx（优化镜像构建）
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
