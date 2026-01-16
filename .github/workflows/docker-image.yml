@@ -24,7 +24,7 @@ jobs:
       - name: Login to Docker Hub
         run:
           docker login ccr.ccs.tencentyun.com --username=100034085191 -p ${{ secrets.TENCENT_CCR_PASSWORD }}
-
+          nslookup ccr.ccs.tencentyun.com
       # 步骤4：构建并推送Docker镜像到Docker Hub
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
